@@ -5,18 +5,19 @@ const ctx = canvas.getContext('2d');
 let W, H;
 let particles = [];
 let imageURL = 'pikachu.png'; // Tên file của bạn (ảnh Gojo)
-const maxParticles = 135000; // Tăng lên 135,000 để lấp đầy số lượng đích (135424)
-const particleSize = 1;      // Kích thước điểm
-const moveSpeed = 0.05;    // Tốc độ di chuyển
+const maxParticles = 40000; // Tăng số lượng điểm
+const particleSize = 1;      // Giảm về 1 cho nét mảnh
+const moveSpeed = 0.25;    // TĂNG TỐC ĐỘ DI CHUYỂN RẤT NHANH (0.25)
 
 // --- Khởi tạo và Thiết lập Kích thước ---
 function init() {
     W = canvas.width = window.innerWidth;
     H = canvas.height = window.innerHeight;
+    particles = [];
     loadAndAnalyzeImage(imageURL);
 }
 
-// --- Tải và Phân tích Hình ảnh ---
+// --- Tải và Phân tích Hình ảnh (Đã sửa lỗi LỌC MÀU) ---
 function loadAndAnalyzeImage(url) {
     const img = new Image();
     img.onload = () => {
@@ -32,14 +33,15 @@ function loadAndAnalyzeImage(url) {
         const data = imageData.data;
         const targetPositions = [];
         
-        const step = 2; // Giảm bước nhảy để lấy nhiều chi tiết hơn
+        const step = 1; // Lấy mẫu từng pixel
         for (let x = 0; x < img.width; x += step) {
             for (let y = 0; y < img.height; y += step) {
                 const index = (y * img.width + x) * 4;
+                const red = data[index]; // Lấy giá trị kênh Đỏ
                 const alpha = data[index + 3];
 
-                // Chỉ cần pixel không trong suốt là lấy (alpha > 10)
-                if (alpha > 10) { 
+                // LỌC: Chỉ lấy pixel không trong suốt VÀ là vùng tối (R < 100)
+                if (alpha > 10 && red < 100) { 
                     const targetX = (W / 2) - (img.width / 2) + x;
                     const targetY = (H / 2) - (img.height / 2) + y;
                     targetPositions.push({ x: targetX, y: targetY });
@@ -48,7 +50,7 @@ function loadAndAnalyzeImage(url) {
         }
         
         if (targetPositions.length === 0) {
-            console.error("LỖI: Không tìm thấy điểm ảnh nào. Kiểm tra lại ảnh.");
+            console.error("LỖI: Không tìm thấy điểm ảnh nào.");
             return; 
         }
 
@@ -58,29 +60,27 @@ function loadAndAnalyzeImage(url) {
     };
     
     img.onerror = () => {
-        console.error("LỖI KHÔNG TẢI ĐƯỢC ẢNH! Hãy kiểm tra lại tên file 'pikachu.png' và đảm bảo nó nằm cùng thư mục với file HTML.");
+        console.error("LỖI KHÔNG TẢI ĐƯỢC ẢNH!");
     };
     
     img.src = url;
 }
 
 
+// --- Gán vị trí đích tuần tự (Đã sửa lỗi) ---
 function createParticles(targetPositions) {
     let targetIndex = 0;
-    // Nếu không có vị trí đích, dừng lại
-    if (targetPositions.length === 0) return; 
+    if (targetPositions.length === 0) return; 
 
     for (let i = 0; i < maxParticles; i++) {
-        // === SỬA LỖI: Gán vị trí đích theo thứ tự lặp lại (Modulus) ===
-        // Điều này đảm bảo các điểm dàn trải đều trên toàn bộ hình ảnh
+        // Gán vị trí đích theo thứ tự lặp lại (Modulus)
         const target = targetPositions[targetIndex % targetPositions.length];
         targetIndex++;
-        // ===============================================================
         
         particles.push({
-            x: Math.random() * W, // Vị trí khởi đầu ngẫu nhiên trên toàn màn hình
+            x: Math.random() * W, 
             y: Math.random() * H,
-            targetX: target.x, // Vị trí đích là pixel trong ảnh
+            targetX: target.x, 
             targetY: target.y,
         });
     }
@@ -94,7 +94,7 @@ function animate() {
     for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
         
-        // Di chuyển về vị trí đích
+        // Di chuyển theo công thức đàn hồi
         p.x += (p.targetX - p.x) * moveSpeed;
         p.y += (p.targetY - p.y) * moveSpeed;
         
@@ -108,5 +108,4 @@ function animate() {
 
 // Khởi động
 window.addEventListener('resize', init);
-
 init();
