@@ -5,8 +5,8 @@ const ctx = canvas.getContext('2d');
 let W, H;
 let particles = [];
 let imageURL = 'pikachu.png'; // Tên file của bạn (ảnh Gojo)
-const maxParticles = 40000; // Tăng số lượng điểm cho nét
-const particleSize = 1;      // Kích thước điểm (Giảm còn 1 cho đẹp)
+const maxParticles = 135000; // Tăng lên 135,000 để lấp đầy số lượng đích (135424)
+const particleSize = 1;      // Kích thước điểm
 const moveSpeed = 0.05;    // Tốc độ di chuyển
 
 // --- Khởi tạo và Thiết lập Kích thước ---
@@ -19,8 +19,6 @@ function init() {
 // --- Tải và Phân tích Hình ảnh ---
 function loadAndAnalyzeImage(url) {
     const img = new Image();
-    // Bỏ qua crossOrigin nếu chạy trên server ảo (Live Server)
-    // img.crossOrigin = "Anonymous"; 
     img.onload = () => {
         console.log(`Đã tải ảnh thành công: ${img.width}x${img.height}`);
         
@@ -34,16 +32,13 @@ function loadAndAnalyzeImage(url) {
         const data = imageData.data;
         const targetPositions = [];
         
-        // Giảm bước nhảy để lấy nhiều chi tiết hơn
-        const step = 2; 
+        const step = 2; // Giảm bước nhảy để lấy nhiều chi tiết hơn
         for (let x = 0; x < img.width; x += step) {
             for (let y = 0; y < img.height; y += step) {
                 const index = (y * img.width + x) * 4;
                 const alpha = data[index + 3];
 
-                // === DÒNG SỬA QUAN TRỌNG NHẤT ===
                 // Chỉ cần pixel không trong suốt là lấy (alpha > 10)
-                // Bỏ qua điều kiện lọc màu (r < 240)
                 if (alpha > 10) { 
                     const targetX = (W / 2) - (img.width / 2) + x;
                     const targetY = (H / 2) - (img.height / 2) + y;
@@ -76,13 +71,16 @@ function createParticles(targetPositions) {
     if (targetPositions.length === 0) return; 
 
     for (let i = 0; i < maxParticles; i++) {
-        // Lấy vị trí đích ngẫu nhiên để các điểm phân bổ đều
-        const target = targetPositions[Math.floor(Math.random() * targetPositions.length)];
+        // === SỬA LỖI: Gán vị trí đích theo thứ tự lặp lại (Modulus) ===
+        // Điều này đảm bảo các điểm dàn trải đều trên toàn bộ hình ảnh
+        const target = targetPositions[targetIndex % targetPositions.length];
+        targetIndex++;
+        // ===============================================================
         
         particles.push({
-            x: Math.random() * W,
+            x: Math.random() * W, // Vị trí khởi đầu ngẫu nhiên trên toàn màn hình
             y: Math.random() * H,
-            targetX: target.x,
+            targetX: target.x, // Vị trí đích là pixel trong ảnh
             targetY: target.y,
         });
     }
@@ -96,6 +94,7 @@ function animate() {
     for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
         
+        // Di chuyển về vị trí đích
         p.x += (p.targetX - p.x) * moveSpeed;
         p.y += (p.targetY - p.y) * moveSpeed;
         
