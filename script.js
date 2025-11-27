@@ -5,9 +5,9 @@ const ctx = canvas.getContext('2d');
 let W, H;
 let particles = [];
 let imageURL = 'pikachu.png'; // Tên file của bạn (ảnh Gojo)
-const maxParticles = 40000; // Tăng số lượng điểm
-const particleSize = 1;      // Giảm về 1 cho nét mảnh
-const moveSpeed = 0.25;    // TĂNG TỐC ĐỘ DI CHUYỂN RẤT NHANH (0.25)
+const maxParticles = 40000;  // Số lượng điểm tối đa
+const particleSize = 1;      // Kích thước điểm
+const moveSpeed = 0.25;    // Tốc độ di chuyển RẤT NHANH (0.25)
 
 // --- Khởi tạo và Thiết lập Kích thước ---
 function init() {
@@ -17,7 +17,7 @@ function init() {
     loadAndAnalyzeImage(imageURL);
 }
 
-// --- Tải và Phân tích Hình ảnh (Đã sửa lỗi LỌC MÀU) ---
+// --- Tải và Phân tích Hình ảnh (LỌC BỎ NỀN TRẮNG VÀ TRONG SUỐT) ---
 function loadAndAnalyzeImage(url) {
     const img = new Image();
     img.onload = () => {
@@ -37,11 +37,15 @@ function loadAndAnalyzeImage(url) {
         for (let x = 0; x < img.width; x += step) {
             for (let y = 0; y < img.height; y += step) {
                 const index = (y * img.width + x) * 4;
-                const red = data[index]; // Lấy giá trị kênh Đỏ
+                const red = data[index]; 
+                const green = data[index + 1];
+                const blue = data[index + 2];
                 const alpha = data[index + 3];
 
-                // LỌC: Chỉ lấy pixel không trong suốt VÀ là vùng tối (R < 100)
-                if (alpha > 10 && red < 100) { 
+                // LỌC MỚI VÀ QUYẾT ĐỊNH: 
+                // 1. Phải không trong suốt (alpha > 10) 
+                // 2. Phải KHÔNG phải màu trắng tinh (Một trong 3 kênh màu phải nhỏ hơn 250)
+                if (alpha > 10 && (red < 250 || green < 250 || blue < 250)) { 
                     const targetX = (W / 2) - (img.width / 2) + x;
                     const targetY = (H / 2) - (img.height / 2) + y;
                     targetPositions.push({ x: targetX, y: targetY });
