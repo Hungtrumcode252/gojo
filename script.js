@@ -109,4 +109,5 @@ function animate() {
 
 // Khởi động
 window.addEventListener('resize', init);
+
 init();
